@@ -20,6 +20,7 @@ OpenS3 GUI provides a modern web-based interface for managing your [OpenS3](http
 - **Authentication**: Securely connect to your OpenS3 server with proper credentials
 - **Configurable Settings**: Save your preferred connection settings
 - **Notification System**: Real-time feedback for all operations
+- **Improved Error Handling**: Clear, descriptive error messages that guide users through resolution steps
 
 ## Installation
 
@@ -88,7 +89,7 @@ OpenS3 GUI provides a modern web-based interface for managing your [OpenS3](http
 
 - **Backend**: Flask web server
 - **Frontend**: HTML, CSS, JavaScript with Bootstrap 5
-- **Storage Integration**: OpenS3-SDK
+- **Storage Integration**: OpenS3-SDK (version 0.1.6 or later)
 
 ### Project Structure
 
@@ -124,6 +125,25 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [OpenS3-SDK](https://github.com/SourceBox-LLC/OpenS3-SDK) - Python SDK for OpenS3
 - [OpenS3-server](https://github.com/SourceBox-LLC/OpenS3-server) - S3-compatible object storage server
+
+## Troubleshooting
+
+### Common Error Messages
+
+#### Bucket Operations
+
+- **Cannot Delete Non-Empty Bucket**: When attempting to delete a bucket that contains objects, the system will display a warning message explaining that all objects must be deleted first. This helps prevent accidental data loss.
+
+#### Object Operations
+
+- **Bucket Not Found**: Ensure the bucket exists before attempting to view or modify its contents.
+- **Object Not Found**: The requested object may have been deleted or the path is incorrect.
+
+### Tips
+
+- Always check notification messages that appear at the top of the screen for important feedback.
+- For bucket deletion, first delete all objects within the bucket before attempting to delete the bucket itself.
+- If you encounter unexpected errors, check the OpenS3 server console for more detailed error information.
 
 ## Acknowledgements
 
