@@ -89,9 +89,14 @@ def list_objects(bucket_name):
     
     try:
         response = client.list_objects(Bucket=bucket_name, Prefix=prefix)
+        print("DEBUG - List objects response:", response)
+        
         # Extract object info from boto3-like response
         objects = []
-        for obj in response.get('Contents', []):
+        contents = response.get('Contents', [])
+        print("DEBUG - Contents:", contents)
+        
+        for obj in contents:
             objects.append({
                 'key': obj.get('Key', ''),
                 'size': obj.get('Size', 0),
