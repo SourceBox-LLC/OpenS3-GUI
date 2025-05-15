@@ -152,16 +152,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 data.buckets.forEach(bucket => {
-                    const bucketItem = document.createElement('a');
-                    bucketItem.href = '#';
-                    bucketItem.classList.add('list-group-item', 'list-group-item-action', 'bucket-item');
-                    bucketItem.dataset.bucket = bucket;
-                    bucketItem.innerHTML = `
+                    const bucketItem = document.createElement('div');
+                    bucketItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                    
+                    // Create the clickable bucket name
+                    const bucketLink = document.createElement('a');
+                    bucketLink.href = '#';
+                    bucketLink.classList.add('flex-grow-1', 'bucket-item');
+                    bucketLink.dataset.bucket = bucket;
+                    bucketLink.innerHTML = `
                         <i class="bi bi-bucket-fill me-2"></i>
                         ${bucket}
                     `;
                     
-                    bucketItem.addEventListener('click', function(e) {
+                    // Create the delete button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger', 'ms-2');
+                    deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+                    deleteBtn.title = `Delete ${bucket} bucket`;
+                    deleteBtn.dataset.bucket = bucket;
+                    
+                    // Add click handler for the bucket name
+                    bucketLink.addEventListener('click', function(e) {
                         e.preventDefault();
                         // Clear any selected bucket
                         document.querySelectorAll('.bucket-item').forEach(item => {
@@ -169,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         
                         // Set this bucket as active
-                        bucketItem.classList.add('active');
+                        bucketLink.classList.add('active');
                         
                         // Load objects for this bucket
                         currentBucket = bucket;
@@ -177,6 +189,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         loadObjects(bucket, '');
                     });
                     
+                    // Add click handler for the delete button
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation(); // Prevent triggering the bucket link click
+                        
+                        // Confirm deletion
+                        if (confirm(`Are you sure you want to delete the bucket '${bucket}'?\n\nThis action cannot be undone and will permanently delete the bucket and all its contents.`)) {
+                            deleteBucket(bucket);
+                        }
+                    });
+                    
+                    // Add elements to the bucket item
+                    bucketItem.appendChild(bucketLink);
+                    bucketItem.appendChild(deleteBtn);
                     bucketList.appendChild(bucketItem);
                 });
             } else {
@@ -777,24 +803,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Delete a bucket
+    function deleteBucket(bucket) {
+        fetch(`/buckets/${bucket}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification('Success', `Bucket '${bucket}' deleted successfully`, 'success');
+                
+                // If the deleted bucket was the currently selected one, clear the objects view
+                if (currentBucket === bucket) {
+                    currentBucket = null;
+                    objectsContainer.classList.add('d-none');
+                    objectActions.classList.add('d-none');
+                    connectionRequest.classList.remove('d-none');
+                }
+                
+                // Reload buckets
+                loadBuckets();
+            } else if (data.status === 'error') {
+                // Enhanced error handling based on error_type
+                if (data.error_type === 'bucket_not_empty') {
+                    // Special handling for 'bucket not empty' errors
+                    showNotification(
+                        'Bucket Not Empty', 
+                        data.message, 
+                        'warning'
+                    );
+                } else {
+                    // Generic error handling for other errors
+                    showNotification('Error', data.message, 'error');
+                }
+            } else {
+                showNotification('Error', 'Unknown error occurred', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error', error.message, 'error');
+        });
+    }
+
     // Show notification
     function showNotification(title, message, type) {
         toastTitle.textContent = title;
         toastBody.textContent = message;
         
-        // Remove previous classes
-        notificationToast.classList.remove('bg-success', 'bg-danger', 'bg-info', 'text-white');
+        // Remove existing classes
+        notificationToast.classList.remove('bg-success', 'bg-danger', 'bg-info', 'bg-warning');
         
-        // Add appropriate class
+        // Add appropriate class based on type
         if (type === 'success') {
-            notificationToast.classList.add('bg-success', 'text-white');
+            notificationToast.classList.add('bg-success');
         } else if (type === 'error') {
-            notificationToast.classList.add('bg-danger', 'text-white');
+            notificationToast.classList.add('bg-danger');
         } else if (type === 'info') {
-            notificationToast.classList.add('bg-info', 'text-white');
+            notificationToast.classList.add('bg-info');
+        } else if (type === 'warning') {
+            notificationToast.classList.add('bg-warning');
         }
         
-        // Show toast
         toastInstance.show();
     }
 

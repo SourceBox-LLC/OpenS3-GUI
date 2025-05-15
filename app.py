@@ -78,7 +78,46 @@ def delete_bucket(bucket_name):
         client.delete_bucket(Bucket=bucket_name)
         return jsonify({"status": "success"})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        # Extract the detailed error message
+        error_message = str(e)
+        status_code = 400
+        
+        # Debug information about the exception
+        print(f"DEBUG - Exception type: {type(e).__name__}")
+        print(f"DEBUG - Exception message: {str(e)}")
+        print(f"DEBUG - Exception attributes: {dir(e)}")
+        
+        # Check if it's a requests HTTPError
+        import requests
+        if isinstance(e, requests.exceptions.HTTPError):
+            print(f"DEBUG - HTTPError status code: {e.response.status_code}")
+            print(f"DEBUG - HTTPError response text: {e.response.text}")
+            status_code = e.response.status_code
+            try:
+                response_json = e.response.json()
+                print(f"DEBUG - Response JSON: {response_json}")
+                if 'detail' in response_json:
+                    error_message = response_json['detail']
+            except:
+                pass
+        
+        # Check if it's an HTTP error with detail
+        if hasattr(e, 'detail'):
+            error_message = e.detail
+            print(f"DEBUG - Found detail attribute: {error_message}")
+            # Get the original status code from the server if available
+            if hasattr(e, 'status_code'):
+                status_code = e.status_code
+                print(f"DEBUG - Found status_code attribute: {status_code}")
+                
+        # Check if this is a specific bucket not empty error
+        is_not_empty_error = 'cannot be deleted because it still contains objects' in error_message
+        
+        return jsonify({
+            "status": "error", 
+            "message": error_message,
+            "error_type": "bucket_not_empty" if is_not_empty_error else "general_error"
+        }), status_code
 
 @app.route('/buckets/<bucket_name>/objects', methods=['GET'])
 def list_objects(bucket_name):
