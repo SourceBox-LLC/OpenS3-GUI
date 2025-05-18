@@ -28,18 +28,35 @@ def connect():
     
     try:
         endpoint_url = f"http://{host}:{port}"
+        print(f"DEBUG - Connecting to: {endpoint_url}")
+        print(f"DEBUG - Using credentials: {access_key_id} / {secret_access_key}")
+        
+        # Try direct requests first to debug
+        import requests
+        from requests.auth import HTTPBasicAuth
+        
+        print("DEBUG - Testing direct requests connection")
+        response = requests.get(f"{endpoint_url}/buckets", 
+                             auth=HTTPBasicAuth(access_key_id, secret_access_key))
+        print(f"DEBUG - Direct request status: {response.status_code}")
+        print(f"DEBUG - Direct request content: {response.text[:200]}")
         
         # Use AWS-style credentials for OpenS3 authentication
+        print("DEBUG - Creating OpenS3 client")
         client = opens3.client('s3', 
                           endpoint_url=endpoint_url,
                           aws_access_key_id=access_key_id,
                           aws_secret_access_key=secret_access_key)
         
         # Test connection by listing buckets
-        client.list_buckets()
+        print("DEBUG - Testing list_buckets")
+        result = client.list_buckets()
+        print(f"DEBUG - list_buckets result: {result}")
         
         return jsonify({"status": "success"})
     except Exception as e:
+        print(f"DEBUG - Connection error: {str(e)}")
+        print(f"DEBUG - Error type: {type(e)}")
         return jsonify({"status": "error", "message": str(e)}), 400
 
 @app.route('/buckets', methods=['GET'])
